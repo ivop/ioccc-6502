@@ -77,18 +77,22 @@ N ()
 mainloop (int c)
 {
   FILE *g;
-  for (;;)
-    {
+  for (;;) {
 
-      /* o is some sort of elapsed time but can cause interrupts - maybe like a VIA timer?? */
-      o++ % (c * 4) ? h : (h =
-			   wgetch (stdscr), h - (-1) ? (m[n & 162] =
-							h | l) : 0);
-      if (!w)
-	{
-	  /* 59408 is PIA 1 */
-	  s = (m[n & 59408] |= z ? l : 0) & 15;
-	  m[n & 59410] = ~(h - (-1) ?
+      // o is counter to which events are synchronized
+      // advance counter, check keyboard input, put in location 0xa2
+      if (!(o++ % (c * 4))) {
+          h = wgetch(stdscr);
+          if (h >= 0) {
+              m[0xa2] = h | 0x80;       // new key with bit 7 set
+          }
+      }
+
+      if (!w) {
+	      /* 59408 is PIA 1 */
+          if (z) m[0xe810] |= 0x80;
+          s = m[0xe810] & 15;           // s=0 ?
+    	  m[0xe812] = ~(h - (-1) ?
 			   (s ^ 8 ? 0 : j[h | l] & 1) | (j[h] / 8 - 5 -
 							 s ? 0 : 1 << j[h] %
 							 8) : 0);

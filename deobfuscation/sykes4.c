@@ -204,13 +204,10 @@ void mainloop(int c) {
             break;
         }
 
-        p = e + m;
+        p = &m[e];              // set pointer
+
         s = i >> 6;
         t = j[i + O] - 35;
-
-        if (stderrlines > 0) {
-            fprintf(stderr, "second lookup, t=%04x ", t);
-        }
 
         /* another switch statement - the main instruction emulation */
         t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? 0 : R(a = y) : (k = x) : (R(a = x)) : (R(x = k)) : (R(y = a)) : (R(x = a)) : (*p = y)   /* STY */

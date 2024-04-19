@@ -6,8 +6,9 @@
 int d;                      // program counter
 int  C, Z, I, D, B, V, S;   // flags
 unsigned char a, x, y, k;   // registers, k=sp
-                            //
-int i = 0xc000, t, s, o, h, z, O = 256, n = 0xffff, l = 128, f = 255, e, w;
+ 
+int i = 0xc000;             // fetched instruction
+int t, s, o, h, z, O = 256, n = 0xffff, l = 128, f = 255, e, w;
 unsigned char *p, m[65536], *u;
 
 
@@ -269,12 +270,15 @@ int main (int c, char *v[]) {
       exit (1);
   }
 
-  t = 0xc000;       // temp = load address
-  while ((s = fgetc(g)) + 1) m[t++ & 0xffff] = s;
+  t = 0xc000;                       // temp = load address
+  while ((s = fgetc(g)) + 1)
+      m[t++ & 0xffff] = s;
 
-  w = t & n;
-  /* d is program counter PC */
-  d = w ? i : (t = n - 3, d += C, m[n & t] + m[n & t + 1] * O);
+  w = t & n;                        // w == 0 if loaded exactly to memtop
+
+  if (!w) d = m[0xfffc] + m[0xfffd]*256;    // run address from reset vector
+  else    d = 0xc000;                       // run address = load address
+
   z = c > 2 ? atoi (v[2]) + 1 : 4;
   c = z ? n * z / 4 : n;
   nodelay (initscr (), 1);

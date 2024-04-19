@@ -140,23 +140,36 @@ mainloop(int c) {
         /* j is a multi-purpose lookup table */
         t = j[i / 2 & 14 | i & 1 | O + O] & 15;
 
-        if (stderrlines > 0) {
-            fprintf(stderr, "first lookup, t=%d ", t);
-        }
+        // addressing modes, determine effective address
 
-        /* poor man's case statement, switching on t */
-        /* e must be effective address and we must be switching on addressing modes */
-        e = t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? (t = d, d += 2, m[n & t] + m[n & t + 1] * O) + (i - 190 ? x : y)    /* 190 is BE - uniquely abs,Y */
-            : (t = d, d += 2, m[n & t] + m[n & t + 1] * O) + y : f & m[n & d++] + (i - 150 && i - 182 ? x : y)  /* the two zp,Y opcodes */
-            : (t = m[n & d], d += 1, m[n & t] + m[n & t + 1] * O) + y
-            : (t = d, d += 2, m[n & t] + m[n & t + 1] * O)
-            : m[n & d++]
-            /* t==2 */ : d++
-            : (t = m[n & d] + x & f, d += 1, m[n & t] + m[n & t + 1] * O)
-            : &a - m;
-
-        if (stderrlines > 0) {
-            fprintf(stderr, "first lookup, eff=%04x ", e);
+        switch(t) {
+        case 0:
+            e = &a - m;
+            break;
+        case 1:
+            e = (t = m[n & d] + x & f, d += 1, m[n & t] + m[n & t + 1] * O);
+            break;
+        case 2:
+            e = d++;
+            break;
+        case 3:
+            e = m[n & d++];
+            break;
+        case 4:
+            e = (t = d, d += 2, m[n & t] + m[n & t + 1] * O);
+            break;
+        case 5:
+            e = (t = m[n & d], d += 1, m[n & t] + m[n & t + 1] * O) + y;
+            break;
+        case 6:
+            e = f & m[n & d++] + (i - 150 && i - 182 ? x : y);  /* the two zp,Y opcodes */
+            break;
+        case 7:
+            e = (t = d, d += 2, m[n & t] + m[n & t + 1] * O) + y;
+            break;
+        case 8:
+            e = (t = d, d += 2, m[n & t] + m[n & t + 1] * O) + (i - 190 ? x : y);    /* 190 is BE - uniquely abs,Y */
+            break;
         }
 
         p = e + m;
@@ -167,7 +180,7 @@ mainloop(int c) {
             fprintf(stderr, "second lookup, t=%04x ", t);
         }
 
-        /* another case statement - the main instruction emulation */
+        /* another switch statement - the main instruction emulation */
         t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? 0 : R(a = y) : (k = x) : (R(a = x)) : (R(x = k)) : (R(y = a)) : (R(x = a)) : (*p = y)   /* STY */
             : (*p = x)
             : (*p = a)

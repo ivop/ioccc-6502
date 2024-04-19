@@ -89,15 +89,26 @@ mainloop(int c) {
         }
 
         if (!w) {
-            /* 59408 is PIA 1 */
-            if (z)
+            /* 0xe810 is PIA 1 */
+            if (z) {
                 m[0xe810] |= 0x80;
-            s = m[0xe810] & 15; // s=0 ?
-            m[0xe812] = ~(h - (-1) ?
-                          (s ^ 8 ? 0 : j[h | l] & 1) | (j[h] / 8 - 5 -
-                                                        s ? 0 : 1 << j[h] %
-                                                        8) : 0);
+            }
+            s = m[0xe810] & 15;
+            if (h+1) {
+                if (!(s ^ 8)) {
+                    m[0xe812] = j[h | 0x80] & 1;
+                } else {
+                    m[0xe812] = 0;
+                }
+                if (!(j[h] / 8 - 5 - s)) {
+                    m[0xe812] |= 1 << j[h] % 8;
+                }
+                m[0xe812] ^= 0xff;
+            } else {
+                m[0xe812] = 0xff;
+            }
         }
+
         /* interrupt from timer */
         /*
            if(ttt>65530){
@@ -111,8 +122,6 @@ mainloop(int c) {
                        d);
 #endif
 #ifndef TIMERINTERRUPT
-        /* either we need to force B to zero for this interrupt, or we need B to be generally zero and force it to 16 for BRK and PHP */
-        /*      o % c | I || (B=0, N ()); /* bugfix - interrupt saves B as zero */
         o % c | I || N();       /* no bugfix - we've fiddled B to be always zero */
 #endif
 
@@ -258,18 +267,26 @@ int main(int c, char *v[]) {
     }
 
     t = 0xc000;                 // temp = load address
-    while ((s = fgetc(g)) + 1)
+    while ((s = fgetc(g)) + 1) {
         m[t++ & 0xffff] = s;
+    }
 
     w = t & n;                  // w == 0 if loaded exactly to memtop
 
-    if (!w)
+    if (!w) {
         d = m[0xfffc] + m[0xfffd] * 256;        // run address from reset vector
-    else
+    } else {
         d = 0xc000;             // run address = load address
+    }
 
-    z = c > 2 ? atoi(v[2]) + 1 : 4;
+    if (c > 2) {                // speed
+        z = atoi(v[2]) + 1;
+    } else {
+        z = 4;
+    }
+
     c = z ? n * z / 4 : n;
+
     nodelay(initscr(), 1);
     curs_set(I);
     cbreak();

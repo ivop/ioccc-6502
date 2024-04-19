@@ -3,16 +3,22 @@
 #include <string.h>
 #include <curses.h>
 
-int d;                          // program counter
-int C, Z, I, D, B, V, S;        // flags
-unsigned char a, x, y, k;       // registers, k=sp
+int d;                      // program counter
+int C, Z, I, D, B, V, S;    // flags
+unsigned char a, x, y, k;   // registers, k=sp
 
-int i = 0xc000;                 // fetched instruction
-int t, s, o, h, z, O = 256, n = 0xffff, l = 128, f = 255, e, w;
+int i = 0xc000;             // fetched instruction
+int n = 0xffff;             // address mask, to keep index into memory sane 
+int l = 0x80;               // sign mask
+int f = 0xff;               // LSB mask
+int O = 0x0100;             // one page, also stack base
+int t, s, o, h, z, e, w;
 unsigned char *p, m[65536], *u;
 
 
-/* j is 528 characters  */
+// j was 528 characters
+// j is 512 characters, split addr_modes
+
 unsigned char *j =
 " ./  p/ 7 ] . 6 6 p     t7      r(0)1*+2,4WgcovGn^f_NVO>F?T\\swldiHZYI9QJ"
 "RCKSL[b<D8AP:;a@`BXq3j=- HZYI9QJRCKSL[b<D8AP:;a@`BX   57  ;  ;      ;   ;   "
@@ -20,7 +26,11 @@ unsigned char *j =
 "                                )<   <% ><%  <% '<   <% +<   <% 7$  ($A @$A "
 "($A &$   $A *$   $A C2   2; =2; 62; '2   2; +2   2; D#   #B ?#B 6#B &#   #B "
 "*#   #B  F  HFG 1 L HFG 'F  HFG NFM  F  :89 :89 J8I :89 &8  :89 +8K :89 .,  "
-".,/ 5,0 .,/ ',   ,/ +,   ,/ -E  -E3 4E  -E3 &E   E3 *E   E3 2133024425660788";
+".,/ 5,0 .,/ ',   ,/ +,   ,/ -E  -E3 4E  -E3 &E   E3 *E   E3 ";
+
+unsigned char addr_modes[16] = {
+    2,1,3,3,0,2,4,4,2,5,6,6,0,7,8,8,
+};
 
 // calculate Zero, and Sign flags
 void R(int x) {
@@ -138,16 +148,18 @@ mainloop(int c) {
         }
 
         /* j is a multi-purpose lookup table */
-        t = j[i / 2 & 14 | i & 1 | O + O] & 15;
+        t = addr_modes[i / 2 & 14 | i & 1];
 
-        // addressing modes, determine effective address
+        // addressing modes, determine effective address or address of operand
 
         switch(t) {
         case 0:
             e = &a - m;
             break;
         case 1:
-            e = (t = m[n & d] + x & f, d += 1, m[n & t] + m[n & t + 1] * O);
+            t = (m[d & 0xffff] + x) & 0xff;
+            d++;
+            e = m[t] + m[(t+1) & 0xffff] * 256;
             break;
         case 2:
             e = d++;

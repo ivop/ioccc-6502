@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <curses.h>
+#include <time.h>
 
 int d;                      // program counter
 int C, Z, I, D, B, V, S;    // flags
@@ -81,7 +82,7 @@ int N(void) {
     d = m[0xfffe] + m[0xffff]*256;                      // PC = IRQ vector
 }
 
-mainloop(int c) {
+void mainloop(int c) {
     FILE *g;
 
     for (;;) {
@@ -156,31 +157,50 @@ mainloop(int c) {
         case 0:
             e = &a - m;
             break;
-        case 1:
+        case 1:         // (ind,x)
             t = (m[d & 0xffff] + x) & 0xff;
             d++;
             e = m[t] + m[(t+1) & 0xffff] * 256;
             break;
-        case 2:
+        case 2:         // immediate
             e = d++;
             break;
-        case 3:
-            e = m[n & d++];
+        case 3:         // zp
+            e = m[d++ & 0xffff];
             break;
-        case 4:
-            e = (t = d, d += 2, m[n & t] + m[n & t + 1] * O);
+        case 4:         // abs
+            t = d;
+            d += 2;
+            e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256;
             break;
-        case 5:
-            e = (t = m[n & d], d += 1, m[n & t] + m[n & t + 1] * O) + y;
+        case 5:         // (ind),y
+            t = m[d & 0xffff];
+            d++;
+            e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256 + y;
             break;
-        case 6:
-            e = f & m[n & d++] + (i - 150 && i - 182 ? x : y);  /* the two zp,Y opcodes */
+        case 6:         // zp,x and zp,y
+            if (i == 0x96 || i == 0xb6) {     // the two zp,y opcodes
+                e = m[d & 0xffff] + y;
+            } else {
+                e = m[d & 0xffff] + x;
+            }
+            d++;
+            e &= 0xff;
             break;
-        case 7:
-            e = (t = d, d += 2, m[n & t] + m[n & t + 1] * O) + y;
+        case 7:         // abs,y
+            t = d;
+            d += 2;
+            e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256 + y;
             break;
-        case 8:
-            e = (t = d, d += 2, m[n & t] + m[n & t + 1] * O) + (i - 190 ? x : y);    /* 190 is BE - uniquely abs,Y */
+        case 8:         // abs,x and one abs,y
+            t = d;
+            d += 2;
+            e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256;
+            if (i == 0xbe) {
+                e += y;
+            } else {
+                e += x;
+            }
             break;
         }
 

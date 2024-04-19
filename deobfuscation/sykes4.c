@@ -36,13 +36,14 @@ void K(int x) {
 
 // pull P from stack and set registers
 void A(void) {
-    R(t = m[n & ++k + O]);
+    t = m[n & ++k + O];
     C = t & 1;
     Z = t & 2;
     I = t & 4;
     D = t & 8;
     B = 0;          /* bugfix: we model B as always zero so IRQ is detected as such by the handler */
     V = t & 64;
+    S = t & 128;
 }
 
 // push program counter d to stack
@@ -105,52 +106,35 @@ mainloop(int c) {
             }
         }
 
-        /* interrupt from timer */
-        /*
-           if(ttt>65530){
-           fprintf(stderr, "\r\ndebug: o is %04x and c is %04x\r\n", o, c);
-           }
-         */
-
-        o % c | I || N();       /* no bugfix - we've fiddled B to be always zero */
-
-        p = m + O + O + m[n & l - 9];
-        t = d % 65493;          /* 0xffd5 is LOAD */
-        i = m[n & d++];         /* i is the fetched instruction */
-#ifdef QUIET
-        if ((ttt++ > 1000123000) || (stderrlines > 0) || (d - 1 == 0xc5fb)
-            || (visited[d - 1]++ > 999999)) {
-            fprintf(stderr,
-                    "\r\ntime is %08d, PC is %04x, ifetch of %02x, A is %02x, X is %02x, Y is %02x, P is %02x, S is 01%02x ",
-                    ttt, d - 1, i, a, x, y, (C | Z | I | D | B | V | S | 32),
-                    k);
-            if (stderrlines++ > 39) {
-                fprintf(stderr, "\r\n");
-                exit(1);
-            }
+        if (!(o % c | I)) {     // trigger IRQ, only when I is clear
+            N();
         }
-#endif
-        if (w + t < 4) {
+
+        p = m + O + O + m[n & l - 9];   // pointer to "string" in memory
+        t = d % 0xffd5;                 // 0xffd5 is LOAD/SAVE
+
+        i = m[n & d++];     // fetch instruction
+
+        if (w + t < 4) {                // intercept LOAD/SAVE
             if (*p && (u = strchr(++p, 34))) {
                 *u = 0;
                 m[n & l - 9] = u - m + 1;
-                if (g = fopen(p, t ? j + 61 : j + 32)) {
-                    i = 1025 - t;
-                    if (!t) {
+                if (g = fopen(p, t ? "w" : "r")) {
+                    i = 1025 - t;           // re-use i as temp variable
+                    if (!t) {               // LOAD
                         (s = fgetc(g));
-                        for ((s = fgetc(g)); (s = fgetc(g)) + 1;
-                             m[n & i++] = s);
+                        for ((s = fgetc(g)); (s = fgetc(g))+1; m[n & i++] = s);
                         for (p = m + 42; p < m + 47;) {
                             *p++ = i % O;
                             *p++ = i / O;
                         }
                     }
-                    for (; t; fputc(m[n & i], g))
+                    for (; t; fputc(m[n & i], g))       // SAVE
                         t = m[n & ++i] ? 3 : t - 1;
                     fclose(g);
                 }
             }
-            i = 96;             /* fake an RTS */
+            i = 0x60;   // reset i to instruction, fake RTS
         }
 
         /* j is a multi-purpose lookup table */

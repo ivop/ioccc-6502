@@ -41,7 +41,7 @@ void A(void) {
     Z = t & 2;
     I = t & 4;
     D = t & 8;
-    B = 0;                      /* bugfix: we model B as always zero so IRQ is detected as such by the handler */
+    B = 0;          /* bugfix: we model B as always zero so IRQ is detected as such by the handler */
     V = t & 64;
 }
 
@@ -59,19 +59,15 @@ int visited[0x10000];
 int ttt;                        /* instructions executed */
 int stderrlines;
 
-N() {
-
+int N(void) {
 #ifdef NOISY
     fprintf(stderr, "\r\nhelper N for BRK/IRQ at time %08d and PC %04x\r\n",
             ttt, d);
 #endif
-
-    X();
-    m[n & k-- + O] = C | Z | I | D | B | V | S | 32;
-    I = 4;
-    d = (t = n - 1, d += 0, m[n & t] + m[n & t + 1] * O);
-    /*  fprintf(stderr, "\r\nhelper N new PC is %04x fetched from %04x\r\n", d, t);
-     */
+    X();                                                // push PC
+    m[n & k-- + O] = C | Z | I | D | B | V | S | 32;    // push P
+    I = 4;                                              // set I flag
+    d = m[0xfffe] + m[0xffff]*256;                      // PC = IRQ vector
 }
 
 mainloop(int c) {
@@ -116,14 +112,7 @@ mainloop(int c) {
            }
          */
 
-#ifdef INTERRUPTANNOUNCE
-        o % c | I
-            || fprintf(stderr, "\r\nInterrupt at time=%08d, PC=%04x\r\n", ttt,
-                       d);
-#endif
-#ifndef TIMERINTERRUPT
         o % c | I || N();       /* no bugfix - we've fiddled B to be always zero */
-#endif
 
         p = m + O + O + m[n & l - 9];
         t = d % 65493;          /* 0xffd5 is LOAD */

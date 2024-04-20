@@ -63,7 +63,7 @@ void R(int x) {
     S = x & 0x80;
 }
 
-// compare x with *p (value) and calculate  Zero, Sign, and Carry flags
+// compare x with *p (value) and calculate Zero, Sign, and Carry flags
 void K(int x) {
     R(x - *p);
     C = x < *p ? 0 : 1;
@@ -76,7 +76,7 @@ void A(void) {
     Z = t & 2;
     I = t & 4;
     D = t & 8;
-    B = 0;          /* bugfix: we model B as always zero so IRQ is detected as such by the handler */
+    B = 0;  /* bugfix: NMOS always zero so IRQ is detected by the handler */
     V = t & 64;
     S = t & 128;
 }
@@ -87,19 +87,7 @@ void X(void) {
     m[n & k-- + O] = d;
 }
 
-#define c argc
-#define v argv
-#define g filehandle
-
-int visited[0x10000];
-int ttt;                        /* instructions executed */
-int stderrlines;
-
 int N(void) {
-#ifdef NOISY
-    fprintf(stderr, "\r\nhelper N for BRK/IRQ at time %08d and PC %04x\r\n",
-            ttt, d);
-#endif
     X();                                                // push PC
     m[n & k-- + O] = C | Z | I | D | B | V | S | 32;    // push P
     I = 4;                                              // set I flag
@@ -255,7 +243,7 @@ void mainloop(int c) {
             R(a &= *p);
             break;
         case 2: // ASL
-            C = *p / l;
+            C = *p / 0x80;
             R(*p *= 2);
             break;
         case 3: // branch on flag
@@ -266,13 +254,12 @@ void mainloop(int c) {
             break;
         case 5: // BIT
             R(a & *p);
-            V = *p & 64;
-            S = *p & l;
+            V = *p & 0x40;
+            S = *p & 0x80;
             break;
         case 6: // BRK
-            d;
-            B = 16;
-            fprintf(stderr, "\r\nBRK at PC=%04x\r\n", d - 1);
+            // d++;     // 6502test is wrong, uncomment this for proper test
+            B = 0x10;
             N();  /* bugfix: BRK is a 2 byte instruction, and B must be set */
             break;
         case 7: // SED,SEI,SEC (SEV does not exist)
@@ -312,10 +299,10 @@ void mainloop(int c) {
             R(++y);
             break;
         case 19: // JMP, 0x4c abs, 0x6c (ind)
-            d = i & 32 ? (t = e, d += 0, m[n & t] + m[n & t + 1] * O) : e;
+            d = i & 32 ? (t = e, d += 0, m[n & t] + m[n & t + 1] * 256) : e;
             break;
         case 20: // JSR
-            s = (t = --d, d += 1, m[n & t] + m[n & t + 1] * O), X(), d = s;
+            s = (t = --d, d += 1, m[n & t] + m[n & t + 1] * 256), X(), d = s;
             break;
         case 21: // LDA
             R(a = *p);
@@ -336,7 +323,7 @@ void mainloop(int c) {
             m[n & k-- + O] = a;
             break;
         case 27: // PHP
-            (m[n & k-- + O] = C | Z | I | D | B | V | S | 48); /* PHP bugfix - must push B bit as 1 */
+            m[n & k-- + O] = C | Z | I | D | 0x10 | 0x20 | V | S; /* PHP bugfix - must push B bit as 1 */
             break;
         case 28: // PLA
             R(a = m[n & ++k + O]);
@@ -392,13 +379,16 @@ void mainloop(int c) {
 
         t = e ^ O * O / 2;
         if (t < 1000) {         /* conditionally update screen */
-            s = *p % l;
-            i = ((1U) << ((10) + 8));
-            *p > s ? wattr_on(stdscr, (attr_t) (i), ((void *)0))
-                : wattr_off(stdscr, (attr_t) (i), ((void *)0));
-            (wmove(stdscr, t / 40, t % 40) == (-1)
-             ? (-1)
-             : waddch(stdscr, s + w < 32 ? s + 64 : s > 95 + w ? s - 32 : s));
+            s = *p % 0x80;
+            i = (1U) << 18;
+            if (*p > s) {
+                wattr_on(stdscr, (attr_t) (i), ((void *)0));
+            } else {
+                wattr_off(stdscr, (attr_t) (i), ((void *)0));
+            }
+            if (wmove(stdscr, t / 40, t % 40) != -1) {
+                waddch(stdscr, s + w < 32 ? s + 64 : s > 95 + w ? s - 32 : s);
+            }
         }
     }
 }

@@ -146,35 +146,9 @@ void mainloop(int c) {
 
         // addressing modes, determine effective address or address of operand
 
-        unsigned char addr_modes[16] = {
-            2,  //0
-                1,  //1
-                    3,  //2
-                    3,  //3
-                        0,  //4
-            2,  //5
-                            4,  //6
-                            4,  //7
-            2,  //8
-                                5,  //9
-                                    6,  //10
-                                    6,  //11
-                        0,  //12
-                                        7,  //13
-                                            8,  //14
-                                            8,  //15
-        };
-        // 0 <-- 4,12
-        // 1 <-- 1
-        // 2 <-- 0,5,8
-        // 3 <-- 2,3
-        // 4 <-- 6,7
-        // 5 <-- 9
-        // 6 <-- 10,11
-        // 7 <-- 13
-        // 8 <-- 14,15 
-        switch(addr_modes[i / 2 & 14 | i & 1]) {
-        case 0:
+        switch(i / 2 & 14 | i & 1) {
+        case 4:         // imp
+        case 12:
             e = &a - m;
             break;
         case 1:         // (ind,x)
@@ -182,23 +156,28 @@ void mainloop(int c) {
             d++;
             e = m[t] + m[(t+1) & 0xffff] * 256;
             break;
-        case 2:         // immediate
+        case 0:         // imm
+        case 5:
+        case 8:
             e = d++;
             break;
-        case 3:         // zp
+        case 2:         // zp
+        case 3:
             e = m[d++ & 0xffff];
             break;
-        case 4:         // abs
+        case 6:         // abs
+        case 7:
             t = d;
             d += 2;
             e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256;
             break;
-        case 5:         // (ind),y
+        case 9:         // (ind),y
             t = m[d & 0xffff];
             d++;
             e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256 + y;
             break;
-        case 6:         // zp,x and zp,y
+        case 10:        // zp,x and zp,y
+        case 11:
             if (i == 0x96 || i == 0xb6) {     // the two zp,y opcodes
                 e = m[d & 0xffff] + y;
             } else {
@@ -207,12 +186,13 @@ void mainloop(int c) {
             d++;
             e &= 0xff;
             break;
-        case 7:         // abs,y
+        case 13:        // abs,y
             t = d;
             d += 2;
             e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256 + y;
             break;
-        case 8:         // abs,x and one abs,y
+        case 14:        // abs,x and one abs,y
+        case 15:
             t = d;
             d += 2;
             e = m[t & 0xffff] + m[(t+1) & 0xffff] * 256;
@@ -224,7 +204,7 @@ void mainloop(int c) {
             break;
         }
 
-        p = &m[e];              // set pointer
+        p = &m[e];              // set pointer to value at e
 
         s = i >> 6;             // s is two top bits
 

@@ -29,10 +29,6 @@ unsigned char *j =
 "*#   #B  F  HFG 1 L HFG 'F  HFG NFM  F  :89 :89 J8I :89 &8  :89 +8K :89 .,  "
 ".,/ 5,0 .,/ ',   ,/ +,   ,/ -E  -E3 4E  -E3 &E   E3 *E   E3 ";
 
-unsigned char addr_modes[16] = {
-    2,1,3,3,0,2,4,4,2,5,6,6,0,7,8,8,
-};
-
 // calculate Zero, and Sign flags
 void R(int x) {
     Z = x ? 0 : 2;
@@ -148,12 +144,36 @@ void mainloop(int c) {
             i = 0x60;   // reset i to instruction, fake RTS
         }
 
-        /* j is a multi-purpose lookup table */
-        t = addr_modes[i / 2 & 14 | i & 1];
-
         // addressing modes, determine effective address or address of operand
 
-        switch(t) {
+        unsigned char addr_modes[16] = {
+            2,  //0
+                1,  //1
+                    3,  //2
+                    3,  //3
+                        0,  //4
+            2,  //5
+                            4,  //6
+                            4,  //7
+            2,  //8
+                                5,  //9
+                                    6,  //10
+                                    6,  //11
+                        0,  //12
+                                        7,  //13
+                                            8,  //14
+                                            8,  //15
+        };
+        // 0 <-- 4,12
+        // 1 <-- 1
+        // 2 <-- 0,5,8
+        // 3 <-- 2,3
+        // 4 <-- 6,7
+        // 5 <-- 9
+        // 6 <-- 10,11
+        // 7 <-- 13
+        // 8 <-- 14,15 
+        switch(addr_modes[i / 2 & 14 | i & 1]) {
         case 0:
             e = &a - m;
             break;

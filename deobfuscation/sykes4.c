@@ -16,11 +16,7 @@ int O = 0x0100;             // one page, also stack base
 int t, s, o, h, z, e, w;
 unsigned char *p, m[65536], *u;
 
-
-// j was 528 characters
-// j was 512 characters, split addr_modes
-// j is 256 characters, split instructions
-
+// Convert pressed key to PET scan code
 unsigned char *j =
 " ./  p/ 7 ] . 6 6 p     t7      r(0)1*+2,4WgcovGn^f_NVO>F?T\\swldiHZYI9QJ"
 "RCKSL[b<D8AP:;a@`BXq3j=- HZYI9QJRCKSL[b<D8AP:;a@`BX   57  ;  ;      ;   ;   "
@@ -109,13 +105,14 @@ void mainloop(int c) {
             }
         }
 
+        // convert pressed key to scan code, or 0xff when no key is pressed
         if (!w) {
             /* 0xe810 is PIA 1 */
             if (z) {
-                m[0xe810] |= 0x80;
+                m[0xe810] |= 0x80;  // PORTA: 7 Diagnostic sense
             }
-            s = m[0xe810] & 15;
-            if (h+1) {
+            s = m[0xe810] & 15;     // PORTA: 3-0 Keyboard row select
+            if (h+1) {              // PORTB: 7-0 Contents of keyboard row
                 if (!(s ^ 8)) {
                     m[0xe812] = j[h | 0x80] & 1;
                 } else {
@@ -126,7 +123,7 @@ void mainloop(int c) {
                 }
                 m[0xe812] ^= 0xff;
             } else {
-                m[0xe812] = 0xff;
+                m[0xe812] = 0xff;   // no key pressed
             }
         }
 

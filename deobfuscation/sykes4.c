@@ -17,12 +17,18 @@ int d;                      // program counter
 int C, Z, I, D, B, V, S;    // flags
 unsigned char a, x, y, k;   // registers, k=sp
 
-int i = 0xc000;             // fetched instruction
-int n = 0xffff;             // address mask, to keep index into memory sane 
-int l = 0x80;               // sign mask
-int f = 0xff;               // LSB mask
-int O = 0x0100;             // one page, also stack base
-int t, s, o, h, z, e, w;
+int i = 0xc000;     // fetched instruction
+int n = 0xffff;     // address mask, to keep index into memory sane 
+int l = 0x80;       // sign mask
+int f = 0xff;       // LSB mask
+int O = 0x0100;     // one page, also stack base
+int e;              // effective address
+int w;              // inverse PET flag, w==0 means PET (and has PIA1)
+int t;              // global temporary variable
+int h;              // key press
+int z;              // inverse monitor flag, if 0, set diagnostic sense
+int s;              // another temporary, keyb. rows, load file, write screen
+int o;              // instruction counter
 unsigned char *p, m[65536], *u;
 
 // Convert pressed key to PET scan code
@@ -100,6 +106,9 @@ int N(void) {
     d = m[0xfffe] + m[0xffff]*256;                      // PC = IRQ vector
 }
 
+// c is related to the interval at which the events are scheduled
+// (reading keyboard, triggering IRQ)
+
 void mainloop(int c) {
     FILE *g;
 
@@ -117,7 +126,7 @@ void mainloop(int c) {
         // convert pressed key to scan code, or 0xff when no key is pressed
         if (!w) {                   // pet.rom was loaded
             /* 0xe810 is PIA 1 */
-            if (z) {
+            if (z) {                // if bit not OR'd, enter monitor
                 m[0xe810] |= 0x80;  // PORTA: 7 Diagnostic sense
             }
             s = m[0xe810] & 15;     // PORTA: 3-0 Keyboard row select
@@ -148,7 +157,7 @@ void mainloop(int c) {
         if (w + t < 4) {                // intercept LOAD/SAVE
             if (*p && (u = strchr(++p, 34))) {
                 *u = 0;
-                m[n & l - 9] = u - m + 1;
+                m[0x77] = u - m + 1;        // move TXTBUF ptr LSB to EOL
                 if (g = fopen(p, t ? "w" : "r")) {
                     i = 1025 - t;           // re-use i as temp variable
                     if (!t) {               // LOAD

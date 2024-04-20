@@ -48,7 +48,7 @@ void R(int x) {
     S = x & 0x80;
 }
 
-// calculate Zero, Sign, and Carry flags
+// compare x with *p (value) and calculate  Zero, Sign, and Carry flags
 void K(int x) {
     R(x - *p);
     C = x < *p ? 0 : 1;
@@ -227,50 +227,147 @@ void mainloop(int c) {
         /* another switch statement - the main instruction emulation */
         /* 44 cases */
         switch (t) {
-        case 0: (t = a + *p + C, C = t & O ? 1 : 0, V = (~(a ^ *p) & (a ^ t) & l) / 2, R(a = t & f)); break;
-        case 1: R(a &= *p); break;
-        case 2: (C = *p / l, R(*p *= 2)); break;
-        case 3: (s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p); break;
-        case 4: !(s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p); break;
-        case 5: (R(a & *p), V = *p & 64, S = *p & l); break;
-        case 6: /* t==6 */ (d, B = 16, fprintf(stderr, "\r\nBRK at PC=%04x\r\n", d - 1), N());     /* bugfix: BRK is a 2 byte instruction, and B must be set */ break;
-        case 7: ((i == 0xf8) ? fprintf(stderr, "\n\rSED at PC=%04x\n\r", d), exit(1) : 1, (*(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = (s ? s - 1 ? s - 2 ? 8 : 8 : 4 : 1)));       /* set/clear flags DVIC */ break;
-        case 8: (*(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = 0); break;
-        case 9: K(a); break;
-        case 10: K(x); break;
-        case 11: K(y); break;
-        case 12: R(--*p); break;
-        case 13: R(--x); break;
-        case 14: R(--y); break;
-        case 15: R(a ^= *p); break;
-        case 16: R(++*p); break;
-        case 17: R(++x); break;
-        case 18: R(++y); break;
-        case 19: (d = i & 32 ? (t = e, d += 0, m[n & t] + m[n & t + 1] * O) : e); break;
-        case 20: (s = (t = --d, d += 1, m[n & t] + m[n & t + 1] * O), X(), d = s); break;
-        case 21: R(a = *p); break;
-        case 22: R(x = *p); break;
-        case 23: (R(y = *p)); break;
-        case 24: (C = *p & 1, R(*p /= 2)); break;
-        case 25: (R(a |= *p)); break;
-        case 26: (m[n & k-- + O] = a); break;
-        case 27: (m[n & k-- + O] = C | Z | I | D | B | V | S | 48); /* PHP bugfix - must push B bit as 1 */ break;
-        case 28: R(a = m[n & ++k + O]); break;
-        case 29: A(); break;
-        case 30: (t = *p, R(*p = *p * 2 | C), C = t / l); break;
-        case 31: (t = *p, R(*p = *p / 2 | C * l), C = t & 1); break;
-        case 32: (A(), d = m[n & ++k + O], d |= m[n & ++k + O] * O); break;
-        case 33: (d = m[n & ++k + O], d += m[n & ++k + O] * O + 1); break;
-        case 34: (t = a - *p - 1 + C, C = t & O ? 0 : 1, V = ((a ^ *p) & (a ^ t) & l) / 2, R(a = t & f)); break;
-        case 35: (*p = a); break;
-        case 36: (*p = x); break;
-        case 37: (*p = y);   /* STY */ break;
-        case 38: (R(x = a)); break;
-        case 39: (R(y = a)); break;
-        case 40: (R(x = k)); break;
-        case 41: (R(a = x)); break;
-        case 42: (k = x); break;
-        case 43: R(a = y); break;
+        case 0: // ADC
+            t = a + *p + C;
+            C = t & O ? 1 : 0;
+            V = (~(a ^ *p) & (a ^ t) & l) / 2;
+            R(a = t & f);
+            break;
+        case 1: // AND
+            R(a &= *p);
+            break;
+        case 2: // ASL
+            C = *p / l;
+            R(*p *= 2);
+            break;
+        case 3: // branch on flag
+            (s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p);
+            break;
+        case 4: // branch on !flag
+            !(s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p);
+            break;
+        case 5: // BIT
+            R(a & *p);
+            V = *p & 64;
+            S = *p & l;
+            break;
+        case 6: // BRK
+            d;
+            B = 16;
+            fprintf(stderr, "\r\nBRK at PC=%04x\r\n", d - 1);
+            N();  /* bugfix: BRK is a 2 byte instruction, and B must be set */
+            break;
+        case 7: // SED,SEI,SEC (SEV does not exist)
+            *(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = (s ? s - 1 ? s - 2 ? 8 : 8 : 4 : 1);
+            break;
+        case 8: // CLD,CLV,CLI,CLC
+            *(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = 0;
+            break;
+        case 9: // CMP
+            K(a);
+            break;
+        case 10: // CPX
+            K(x);
+            break;
+        case 11: // CPY
+            K(y);
+            break;
+        case 12: // DEC
+            R(--*p);
+            break;
+        case 13: // DEX
+            R(--x);
+            break;
+        case 14: // DEY
+            R(--y);
+            break;
+        case 15: // EOR
+            R(a ^= *p);
+            break;
+        case 16: // INC
+            R(++*p);
+            break;
+        case 17: // INX
+            R(++x);
+            break;
+        case 18: // INY
+            R(++y);
+            break;
+        case 19: // JMP, 0x4c abs, 0x6c (ind)
+            d = i & 32 ? (t = e, d += 0, m[n & t] + m[n & t + 1] * O) : e;
+            break;
+        case 20: // JSR
+            s = (t = --d, d += 1, m[n & t] + m[n & t + 1] * O), X(), d = s;
+            break;
+        case 21: // LDA
+            R(a = *p);
+            break;
+        case 22: // LDX
+            R(x = *p);
+            break;
+        case 23: // LDY
+            (R(y = *p));
+            break;
+        case 24: // LSR
+            C = *p & 1, R(*p /= 2);
+            break;
+        case 25: // ORA
+            R(a |= *p);
+            break;
+        case 26: // PHA
+            m[n & k-- + O] = a;
+            break;
+        case 27: // PHP
+            (m[n & k-- + O] = C | Z | I | D | B | V | S | 48); /* PHP bugfix - must push B bit as 1 */
+            break;
+        case 28: // PLA
+            R(a = m[n & ++k + O]);
+            break;
+        case 29: // PLP
+            A();
+            break;
+        case 30: // ROL
+            t = *p, R(*p = *p * 2 | C), C = t / l;
+            break;
+        case 31: // ROR
+            t = *p, R(*p = *p / 2 | C * l), C = t & 1;
+            break;
+        case 32: // RTI
+            A(), d = m[n & ++k + O], d |= m[n & ++k + O] * O;
+            break;
+        case 33: // RTS
+            d = m[n & ++k + O], d += m[n & ++k + O] * O + 1;
+            break;
+        case 34: // SBC
+            t = a - *p - 1 + C, C = t & O ? 0 : 1, V = ((a ^ *p) & (a ^ t) & l) / 2, R(a = t & f);
+            break;
+        case 35: // STA
+            *p = a;
+            break;
+        case 36: // STX
+            *p = x;
+            break;
+        case 37: // STY
+            *p = y;
+             break;
+        case 38: // TAX
+             R(x = a);
+             break;
+        case 39: // TAY
+             (R(y = a));
+             break;
+        case 40: // TSX
+             (R(x = k));
+             break;
+        case 41: // TXA
+             (R(a = x));
+             break;
+        case 42: // TXS
+             (k = x);
+             break;
+        case 43: // TYA
+             R(a = y);
+             break;
         default:
             break;
         }

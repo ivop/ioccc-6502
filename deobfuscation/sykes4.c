@@ -1,3 +1,12 @@
+/* MOS 6502 Emulator
+ *
+ * Written by Stephen Sykes
+ * Winner of Best Emulator IOCCC 2005
+ * https://www.ioccc.org/years.html#2005_sykes
+ *
+ * Deobfuscated by Ed Spittles (2014) and Ivo van Poorten (2024)
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -96,7 +105,7 @@ void mainloop(int c) {
 
     for (;;) {
 
-        // o is counter to which events are synchronized
+        // o is an instruction counter to which events are synchronized
         // advance counter, check keyboard input, put in location 0xa2
         if (!(o++ % (c * 4))) {
             h = wgetch(stdscr);
@@ -106,7 +115,7 @@ void mainloop(int c) {
         }
 
         // convert pressed key to scan code, or 0xff when no key is pressed
-        if (!w) {
+        if (!w) {                   // pet.rom was loaded
             /* 0xe810 is PIA 1 */
             if (z) {
                 m[0xe810] |= 0x80;  // PORTA: 7 Diagnostic sense
@@ -404,7 +413,7 @@ int main(int c, char *v[]) {
     w = t & n;                  // w == 0 if loaded exactly to memtop
 
     if (!w) {
-        d = m[0xfffc] + m[0xfffd] * 256;        // run address from reset vector
+        d = m[0xfffc] + m[0xfffd] * 256;    // run address from reset vector
     } else {
         d = 0xc000;             // run address = load address
     }

@@ -206,56 +206,100 @@ void mainloop(int c) {
 
         p = &m[e];              // set pointer
 
-        s = i >> 6;
+        s = i >> 6;             // s is two top bits
+
         t = j[i + O] - 35;
 
         /* another switch statement - the main instruction emulation */
-        t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? t-- ? 0 : R(a = y) : (k = x) : (R(a = x)) : (R(x = k)) : (R(y = a)) : (R(x = a)) : (*p = y)   /* STY */
+        /* 44 cases */
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+        t-- ?
+            0
+            : R(a = y)
+            : (k = x)
+            : (R(a = x))
+            : (R(x = k))
+            : (R(y = a))
+            : (R(x = a))
+            : (*p = y)   /* STY */
             : (*p = x)
             : (*p = a)
             : (t = a - *p - 1 + C, C = t & O ? 0 : 1, V =
                ((a ^ *p) & (a ^ t) & l) / 2, R(a = t & f))
-            : (d =
-               m[n & ++k + O],
-               d +=
-               m[n & ++k +
-                 O] * O +
-               1) : (A(), d =
-                     m[n & ++k +
-                       O], d |=
-                     m[n & ++k +
-                       O] * O) : (t = *p, R(*p = *p / 2 | C * l), C = t & 1)
-            : (t = *p, R(*p = *p * 2 | C), C = t / l) : A() : R(a = m[n & ++k + O]) : (m[n & k-- + O] = C | Z | I | D | B | V | S | 48) /* PHP bugfix - must push B bit as 1 */
-            : (m[n & k-- + O] = a) : (R(a |= *p)) : (C =
-                                                     *p & 1,
-                                                     R(*p /= 2)) : (R(y =
-                                                                      *p)) :
-            R(x = *p) : R(a = *p) : (s =
-                                     (t = --d, d +=
-                                      1, m[n & t] + m[n & t + 1] * O), X(), d =
-                                     s) : (d = i & 32 ? (t = e, d +=
-                                                         0,
-                                                         m[n & t] + m[n & t +
-                                                                      1] *
-                                                         O) : e) : R(++y) :
-            R(++x) : R(++*p) : R(a ^=
-                                 *p) : R(--y) : R(--x) : R(--*p) : K(y) :
-            K(x) : K(a) : (*(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = 0)
+            : (d = m[n & ++k + O], d += m[n & ++k + O] * O + 1)
+            : (A(), d = m[n & ++k + O], d |= m[n & ++k + O] * O)
+            : (t = *p, R(*p = *p / 2 | C * l), C = t & 1)
+            : (t = *p, R(*p = *p * 2 | C), C = t / l)
+            : A()
+            : R(a = m[n & ++k + O])
+            : (m[n & k-- + O] = C | Z | I | D | B | V | S | 48) /* PHP bugfix - must push B bit as 1 */
+            : (m[n & k-- + O] = a)
+            : (R(a |= *p))
+            : (C = *p & 1, R(*p /= 2)) : (R(y = *p))
+            : R(x = *p) : R(a = *p)
+            : (s = (t = --d, d += 1, m[n & t] + m[n & t + 1] * O), X(), d = s)
+            : (d = i & 32 ? (t = e, d += 0, m[n & t] + m[n & t + 1] * O) : e)
+            : R(++y)
+            : R(++x)
+            : R(++*p)
+            : R(a ^= *p)
+            : R(--y)
+            : R(--x)
+            : R(--*p)
+            : K(y)
+            : K(x)
+            : K(a)
+            : (*(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = 0)
             : ((i == 0xf8) ? fprintf(stderr, "\n\rSED at PC=%04x\n\r", d), exit(1) : 1, (*(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = (s ? s - 1 ? s - 2 ? 8 : 8 : 4 : 1)))       /* set/clear flags DVIC */
-#ifdef OTHERBRK
-            : /* t==6 */ (d, B = 16, fprintf(stderr, "\r\nBRK at PC=%04x\r\n", d - 1), N())     /* bugfix: BRK is a 2 byte instruction */
-#endif
             : /* t==6 */ (d, B = 16, fprintf(stderr, "\r\nBRK at PC=%04x\r\n", d - 1), N())     /* bugfix: BRK is a 2 byte instruction, and B must be set */
             : (R(a & *p), V = *p & 64, S = *p & l)
-            : !(s ? s - 1 ? s - 2 ? Z : C : V : S)
-            && (d += *p & l ? *p - O : *p)
-            : (s ? s - 1 ? s - 2 ? Z : C : V : S)
-            && (d += *p & l ? *p - O : *p)
+            : !(s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p)
+            : (s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p)
             : (C = *p / l, R(*p *= 2))
             : R(a &= *p)
-      :                        /* t==0 */ (t = a + *p + C, C = t & O ? 1 : 0, V =
-                                            (~(a ^ *p) & (a ^ t) & l) / 2,
-                                            R(a = t & f));
+            :/* t==0 */ (t = a + *p + C, C = t & O ? 1 : 0, V = (~(a ^ *p) & (a ^ t) & l) / 2, R(a = t & f));
 
         t = e ^ O * O / 2;
         if (t < 1000) {         /* conditionally update screen */

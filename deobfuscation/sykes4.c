@@ -342,7 +342,8 @@ void mainloop(int c) {
             m[n & k-- + O] = a;
             break;
         case 27: // PHP
-            m[n & k-- + O] = C | Z | I | D | 0x10 | 0x20 | V | S; /* PHP bugfix - must push B bit as 1 */
+            /* PHP bugfix - must push B bit as 1 */
+            m[n & k-- + O] = C | Z | I | D | 0x10 | 0x20 | V | S;
             break;
         case 28: // PLA
             R(a = m[n & ++k + O]);

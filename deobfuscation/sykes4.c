@@ -224,9 +224,9 @@ void mainloop(int c) {
             break;
         }
 
-        p = &m[e];              // set pointer to value at e
+        p = &m[e];      // set pointer to memory location e
 
-        s = i >> 6;             // s is two top bits
+        s = i >> 6;     // two top bits, determines which flag for branches
 
         t = insns[i];
 

@@ -236,7 +236,7 @@ void mainloop(int c) {
         case 0: // ADC
             t = a + *p + C;
             C = t & O ? 1 : 0;
-            V = (~(a ^ *p) & (a ^ t) & l) / 2;
+            V = (~(a ^ *p) & (a ^ t) & 0x80) / 2;
             R(a = t & f);
             break;
         case 1: // AND
@@ -246,11 +246,19 @@ void mainloop(int c) {
             C = *p / 0x80;
             R(*p *= 2);
             break;
-        case 3: // branch on flag
-            (s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p);
+        case 3: { // branch on flag
+                int condition[4] = { S, V, C, Z };
+                if (condition[s]) {
+                    d += *p & 0x80 ? *p - O : *p;
+                }
+            }
             break;
-        case 4: // branch on !flag
-            !(s ? s - 1 ? s - 2 ? Z : C : V : S) && (d += *p & l ? *p - O : *p);
+        case 4: { // branch on !flag
+                int condition[4] = { S, V, C, Z };
+                if (!condition[s]) {
+                    d += *p & 0x80 ? *p - O : *p;
+                }
+            }
             break;
         case 5: // BIT
             R(a & *p);
@@ -262,11 +270,16 @@ void mainloop(int c) {
             B = 0x10;
             N();  /* bugfix: BRK is a 2 byte instruction, and B must be set */
             break;
-        case 7: // SED,SEI,SEC (SEV does not exist)
-            *(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = (s ? s - 1 ? s - 2 ? 8 : 8 : 4 : 1);
+        case 7: { // SED,SEI,SEC (SEV does not exist)
+                int *pflag[4] = { &C, &I, &V, &D };
+                int mask[4]  = {  1,  4,  8,  8 };
+                *pflag[s] = mask[s];
+            }
             break;
-        case 8: // CLD,CLV,CLI,CLC
-            *(s ? s - 1 ? s - 2 ? &D : &V : &I : &C) = 0;
+        case 8: { // CLD,CLV,CLI,CLC
+                int *pflag[4] = { &C, &I, &V, &D };
+                *pflag[s] = 0;
+            }
             break;
         case 9: // CMP
             K(a);
@@ -299,10 +312,16 @@ void mainloop(int c) {
             R(++y);
             break;
         case 19: // JMP, 0x4c abs, 0x6c (ind)
-            d = i & 32 ? (t = e, d += 0, m[n & t] + m[n & t + 1] * 256) : e;
+            if (i & 0x20) {
+                t = (e & 0xff00) | ((e + 1) & 0xff); // bugfix: page wrap bug
+                d = m[n & e] + m[n & t] * 256;
+            } else {
+                d = e;
+            }
             break;
         case 20: // JSR
-            s = (t = --d, d += 1, m[n & t] + m[n & t + 1] * 256), X(), d = s;
+            X(); // d points to 2nd byte, not next opcode
+            d = m[n & d - 1] + m[n & d] * 256;
             break;
         case 21: // LDA
             R(a = *p);
@@ -332,19 +351,29 @@ void mainloop(int c) {
             A();
             break;
         case 30: // ROL
-            t = *p, R(*p = *p * 2 | C), C = t / l;
+            t = *p;
+            R(*p = *p * 2 | C);
+            C = t / 0x80;
             break;
         case 31: // ROR
-            t = *p, R(*p = *p / 2 | C * l), C = t & 1;
+            t = *p;
+            R(*p = *p / 2 | C * l);
+            C = t & 1;
             break;
         case 32: // RTI
-            A(), d = m[n & ++k + O], d |= m[n & ++k + O] * O;
+            A();
+            d = m[n & ++k + O];
+            d |= m[n & ++k + O] * O;
             break;
         case 33: // RTS
-            d = m[n & ++k + O], d += m[n & ++k + O] * O + 1;
+            d = m[n & ++k + O];
+            d += m[n & ++k + O] * O + 1;
             break;
         case 34: // SBC
-            t = a - *p - 1 + C, C = t & O ? 0 : 1, V = ((a ^ *p) & (a ^ t) & l) / 2, R(a = t & f);
+            t = a - *p - 1 + C;
+            C = t & O ? 0 : 1;
+            V = ((a ^ *p) & (a ^ t) & 0x80) / 2;
+            R(a = t & f);
             break;
         case 35: // STA
             *p = a;
@@ -359,16 +388,16 @@ void mainloop(int c) {
              R(x = a);
              break;
         case 39: // TAY
-             (R(y = a));
+             R(y = a);
              break;
         case 40: // TSX
-             (R(x = k));
+             R(x = k);
              break;
         case 41: // TXA
-             (R(a = x));
+             R(a = x);
              break;
         case 42: // TXS
-             (k = x);
+             k = x;
              break;
         case 43: // TYA
              R(a = y);
